@@ -500,67 +500,199 @@ if (isMobileDevice()) {
 
 // Enhanced touch handling for testimonials
 document.addEventListener('DOMContentLoaded', function() {
+    if (!isMobileDevice()) return; // Only run on mobile devices
+
     const testimonialTrack = document.querySelector('.testimonial-track');
     const testimonialContainer = document.querySelector('.testimonial-container');
+    
+    if (!testimonialTrack || !testimonialContainer) return;
+
+    const testimonials = document.querySelectorAll('.testimonial-card');
+    const totalTestimonials = testimonials.length;
+    
     let startX = 0;
     let currentTranslateX = 0;
     let prevTranslateX = 0;
     let isDragging = false;
     let currentIndex = 0;
-    const testimonials = document.querySelectorAll('.testimonial-card');
-    const totalTestimonials = testimonials.length;
+    let animationId = null;
 
     function getPositionX(event) {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
     }
 
     function setSliderPosition() {
+        const slideWidth = testimonialContainer.offsetWidth;
+        currentTranslateX = -currentIndex * slideWidth;
         testimonialTrack.style.transform = `translateX(${currentTranslateX}px)`;
     }
 
     function animateSlide() {
-        const slideWidth = testimonialContainer.offsetWidth;
-        currentTranslateX = -currentIndex * slideWidth;
-        prevTranslateX = currentTranslateX;
+        testimonialTrack.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         setSliderPosition();
+        
+        // Update active testimonial
+        testimonials.forEach((testimonial, index) => {
+            if (index === currentIndex) {
+                testimonial.style.opacity = '1';
+            } else {
+                testimonial.style.opacity = '0.5';
+            }
+        });
     }
-
-    testimonialTrack.addEventListener('touchstart', touchStart);
-    testimonialTrack.addEventListener('touchmove', touchMove);
-    testimonialTrack.addEventListener('touchend', touchEnd);
 
     function touchStart(event) {
         startX = getPositionX(event);
         isDragging = true;
         testimonialTrack.style.transition = 'none';
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
     }
 
     function touchMove(event) {
         if (!isDragging) return;
+        
         const currentX = getPositionX(event);
         const diff = currentX - startX;
-        currentTranslateX = prevTranslateX + diff;
-        setSliderPosition();
+        const slideWidth = testimonialContainer.offsetWidth;
+        
+        // Add resistance at the edges
+        if (
+            (currentIndex === 0 && diff > 0) || 
+            (currentIndex === totalTestimonials - 1 && diff < 0)
+        ) {
+            currentTranslateX = prevTranslateX + (diff * 0.3);
+        } else {
+            currentTranslateX = prevTranslateX + diff;
+        }
+        
+        testimonialTrack.style.transform = `translateX(${currentTranslateX}px)`;
     }
 
     function touchEnd() {
         isDragging = false;
         const slideWidth = testimonialContainer.offsetWidth;
         const movedBy = currentTranslateX - prevTranslateX;
-
-        testimonialTrack.style.transition = 'transform 0.3s ease-out';
-
-        if (Math.abs(movedBy) > slideWidth / 4) {
+        
+        if (Math.abs(movedBy) > slideWidth / 3) {
             if (movedBy > 0 && currentIndex > 0) {
                 currentIndex--;
             } else if (movedBy < 0 && currentIndex < totalTestimonials - 1) {
                 currentIndex++;
             }
         }
-
+        
+        prevTranslateX = -currentIndex * slideWidth;
         animateSlide();
     }
 
+    testimonialTrack.addEventListener('touchstart', touchStart, { passive: true });
+    testimonialTrack.addEventListener('touchmove', touchMove, { passive: false });
+    testimonialTrack.addEventListener('touchend', touchEnd);
+
+    // Initialize first slide
+    setSliderPosition();
+    
     // Handle window resize
-    window.addEventListener('resize', animateSlide);
+    window.addEventListener('resize', () => {
+        setSliderPosition();
+    });
+});
+
+// Testimonial swipe functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const track = document.querySelector('.testimonial-track');
+    if (!track) return;
+
+    let startX;
+    let isDragging = false;
+    let currentIndex = 0;
+    const slides = track.children;
+    let slideWidth = track.parentElement.offsetWidth;
+
+    // Function to trigger the automated slide behavior
+    function triggerAutoSlide(direction) {
+        const prevArrow = document.querySelector('.prev-arrow');
+        const nextArrow = document.querySelector('.next-arrow');
+        
+        if (direction === 'left') {
+            nextArrow.click(); // Move to next slide
+        } else if (direction === 'right') {
+            prevArrow.click(); // Move to previous slide
+        }
+    }
+
+    function handleTouchStart(e) {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+    }
+
+    function handleTouchEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const endX = e.changedTouches[0].clientX;
+        const diff = endX - startX;
+        const swipeThreshold = slideWidth * 0.2;
+
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe right (previous)
+                triggerAutoSlide('right');
+            } else {
+                // Swipe left (next)
+                triggerAutoSlide('left');
+            }
+        }
+    }
+
+    // Event listeners
+    track.addEventListener('touchstart', handleTouchStart, { passive: true });
+    track.addEventListener('touchend', handleTouchEnd);
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        slideWidth = track.parentElement.offsetWidth;
+    });
+});
+
+// Add this to your testimonial functionality
+function handleTestimonialScroll() {
+    const cards = document.querySelectorAll('.testimonial-card');
+    
+    cards.forEach(card => {
+        // Check if content is scrollable
+        const isScrollable = card.scrollHeight > card.clientHeight;
+        card.classList.toggle('scrollable', isScrollable);
+
+        // Handle vertical scroll
+        let startY;
+        let startScrollTop;
+
+        card.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startScrollTop = card.scrollTop;
+            
+            // If at top or bottom, prevent parent swipe handling
+            if ((card.scrollTop <= 0 && startY > e.touches[0].clientY) ||
+                (card.scrollTop + card.clientHeight >= card.scrollHeight && 
+                 startY < e.touches[0].clientY)) {
+                e.stopPropagation();
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            const deltaY = e.touches[0].clientY - startY;
+            if (Math.abs(deltaY) > 10) { // Threshold for vertical scroll
+                e.stopPropagation();
+                card.scrollTop = startScrollTop - deltaY;
+            }
+        }, { passive: true });
+    });
+}
+
+// Add this call to your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+    handleTestimonialScroll();
 });

@@ -1429,54 +1429,27 @@ button:focus {
         width: 100%;
     }
 
-    .testimonial-track {
-        touch-action: pan-x;
-        user-select: none;
-        will-change: transform;
-        transition: transform 0.3s ease;
-    }
-
-    .testimonial-card {
-        touch-action: pan-y;
-        -webkit-overflow-scrolling: touch;
-        overflow-y: auto;
-        max-height: 300px;
-        padding: 1.2rem;
-    }
-
-    /* Visual feedback for swipe */
-    .testimonial-track {
+    .testimonial-container {
+        overflow: hidden;
+        width: 100%;
         position: relative;
+        touch-action: none;
     }
 
-    /* Hide scrollbar but keep functionality */
-    .testimonial-card::-webkit-scrollbar {
-        display: none;
+    .testimonial-track {
+        display: flex;
+        width: 100%;
+        transform: translateX(0);
+        transition: transform 0.3s ease-out;
+        will-change: transform;
     }
 
     .testimonial-card {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    .testimonial-card .quote {
-        font-size: 2.5rem;
-        top: 5px;
-        left: 10px;
-    }
-
-    .testimonial-card .rating {
-        font-size: 1rem;
-        margin: 0.8rem 0;
-    }
-
-    .testimonial-card .author {
-        font-size: 0.9rem;
-        margin-top: 0.8rem;
-    }
-
-    .testimonial-card .source {
-        font-size: 0.8rem;
+        flex: 0 0 100%;
+        width: 100%;
+        padding: 1.2rem;
+        user-select: none;
+        scroll-snap-align: start;
     }
 
     .carousel-arrow {
@@ -1600,39 +1573,11 @@ button:focus {
 }
 
 @media (max-width: 768px) {
-    .testimonial-track {
-        touch-action: pan-x;
-        user-select: none;
-        will-change: transform;
-        transition: transform 0.3s ease;
-    }
-
-    .testimonial-card {
-        touch-action: pan-y;
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    }
-
-    /* Hide scrollbar but keep functionality */
-    .testimonial-card::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* Add visual feedback for swipe */
-    .testimonial-track {
-        position: relative;
-    }
-}
-
-@media (max-width: 768px) {
-    /* Remove arrow buttons on mobile */
-    .carousel-arrow {
-        display: none;
-    }
-
     .testimonial-container {
         overflow: hidden;
         width: 100%;
         position: relative;
+        touch-action: none;
     }
 
     .testimonial-track {
@@ -1641,21 +1586,116 @@ button:focus {
         touch-action: pan-x;
         user-select: none;
         will-change: transform;
-        transition: transform 0.3s ease-out;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
     }
 
     .testimonial-card {
         flex: 0 0 100%;
         width: 100%;
-        touch-action: pan-y;
-        -webkit-overflow-scrolling: touch;
-        overflow-y: auto;
-        max-height: 300px;
         padding: 1.2rem;
+        user-select: none;
+        scroll-snap-align: start;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Remove arrow buttons on mobile */
+    .carousel-arrow, 
+    .prev-arrow, 
+    .next-arrow {
+        display: none !important;
     }
 
-    /* Add visual feedback for active swipe */
-    .testimonial-track.dragging {
-        transition: none;
+    .testimonial-container {
+        overflow: hidden;
+        width: 100%;
+        position: relative;
+        touch-action: none;
+    }
+
+    .testimonial-track {
+        display: flex;
+        width: 100%;
+        touch-action: pan-x;
+        user-select: none;
+        will-change: transform;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .testimonial-card {
+        flex: 0 0 100%;
+        width: 100%;
+        padding: 1.5rem;
+        height: auto;
+        max-height: 300px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Hide scrollbar visually */
+    .testimonial-card::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Testimonial content layout */
+    .testimonial-content {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 1rem;
+    }
+
+    .testimonial-card .quote {
+        font-size: 2rem;
+        opacity: 0.1;
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+
+    .testimonial-card .rating {
+        font-size: 1rem;
+        margin: 0.5rem 0;
+    }
+
+    .testimonial-card .review-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin: 0.5rem 0;
+    }
+
+    .testimonial-card .author {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        font-weight: 600;
+    }
+
+    /* Hide source/via text */
+    .testimonial-card .source {
+        display: none;
+    }
+
+    /* Add fade effect at bottom if content is scrollable */
+    .testimonial-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(transparent, var(--card-bg));
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .testimonial-card.scrollable::after {
+        opacity: 1;
     }
 }
