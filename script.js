@@ -696,3 +696,187 @@ function handleTestimonialScroll() {
 document.addEventListener('DOMContentLoaded', function() {
     handleTestimonialScroll();
 });
+
+// Update the Logger utility with Discord webhook support
+const Logger = {
+    // Log levels
+    LEVELS: {
+        INFO: 'INFO',
+        WARN: 'WARN',
+        ERROR: 'ERROR',
+        DEBUG: 'DEBUG'
+    },
+
+    // Store logs in memory
+    logs: [],
+    
+    // Maximum logs to keep in memory
+    maxLogs: 100,
+
+    // Discord webhook URL
+    DISCORD_WEBHOOK: 'https://discord.com/api/webhooks/1294441344332333068/XQVrdu9k5lavtyVS-A7BWBz_sAZWLXHawQmtWVvYB85fF9euLIO9NA3Gv2RBT_znZxPJ',
+
+    // Send logs to Discord
+    async sendToDiscord(logEntry) {
+        try {
+            // Format the message for Discord
+            const embed = {
+                title: `[${logEntry.level}] ${logEntry.message}`,
+                color: this.getColorForLevel(logEntry.level),
+                timestamp: logEntry.timestamp,
+                fields: [
+                    {
+                        name: 'Details',
+                        value: '```json\n' + JSON.stringify(logEntry.data, null, 2) + '\n```'
+                    },
+                    {
+                        name: 'User Agent',
+                        value: logEntry.userAgent
+                    },
+                    {
+                        name: 'URL',
+                        value: logEntry.url
+                    }
+                ]
+            };
+
+            // Send to Discord
+            await fetch(this.DISCORD_WEBHOOK, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    embeds: [embed]
+                })
+            });
+        } catch (error) {
+            console.error('Failed to send log to Discord:', error);
+        }
+    },
+
+    // Get color for log level
+    getColorForLevel(level) {
+        const colors = {
+            INFO: 0x3498db,    // Blue
+            WARN: 0xf1c40f,    // Yellow
+            ERROR: 0xe74c3c,   // Red
+            DEBUG: 0x2ecc71    // Green
+        };
+        return colors[level] || 0x95a5a6; // Default gray
+    },
+
+    // Update the log method to include Discord logging
+    log(level, message, data = null) {
+        const timestamp = new Date().toISOString();
+        const logEntry = {
+            timestamp,
+            level,
+            message,
+            data,
+            userAgent: navigator.userAgent,
+            url: window.location.href
+        };
+
+        this.logs.push(logEntry);
+        
+        if (this.logs.length > this.maxLogs) {
+            this.logs.shift();
+        }
+
+        // Send to Discord
+        this.sendToDiscord(logEntry);
+
+        // Console logging in development
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[${level}] ${message}`, data || '');
+        }
+    },
+
+    // Convenience methods
+    info(message, data) {
+        this.log(this.LEVELS.INFO, message, data);
+    },
+
+    warn(message, data) {
+        this.log(this.LEVELS.WARN, message, data);
+    },
+
+    error(message, data) {
+        this.log(this.LEVELS.ERROR, message, data);
+    },
+
+    debug(message, data) {
+        this.log(this.LEVELS.DEBUG, message, data);
+    },
+
+    // Track user interactions
+    trackEvent(eventName, eventData) {
+        this.info(`User Event: ${eventName}`, eventData);
+    },
+
+    // Get all logs
+    getLogs() {
+        return this.logs;
+    },
+
+    // Clear logs
+    clearLogs() {
+        this.logs = [];
+    }
+};
+
+// Usage examples:
+document.addEventListener('DOMContentLoaded', function() {
+    // Track page load
+    Logger.info('Page loaded');
+
+    // Track testimonial interactions
+    track.addEventListener('touchstart', (e) => {
+        Logger.trackEvent('testimonial_swipe_start', {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        });
+    });
+
+    track.addEventListener('touchend', (e) => {
+        Logger.trackEvent('testimonial_swipe_end', {
+            x: e.changedTouches[0].clientX,
+            y: e.changedTouches[0].clientY
+        });
+    });
+
+    // Track theme changes
+    themeToggle.addEventListener('click', () => {
+        Logger.trackEvent('theme_toggle', {
+            newTheme: document.documentElement.getAttribute('data-theme')
+        });
+    });
+
+    // Track errors
+    window.addEventListener('error', (e) => {
+        Logger.error('JavaScript error', {
+            message: e.message,
+            filename: e.filename,
+            lineNo: e.lineno,
+            colNo: e.colno,
+            error: e.error?.stack
+        });
+    });
+
+    // Track navigation
+    navLinksItems.forEach(link => {
+        link.addEventListener('click', (e) => {
+            Logger.trackEvent('navigation', {
+                to: e.target.getAttribute('href')
+            });
+        });
+    });
+
+    // Track mobile menu interactions
+    mobileMenuBtn.addEventListener('click', () => {
+        Logger.trackEvent('mobile_menu_toggle', {
+            isOpen: navLinks.classList.contains('active')
+        });
+    });
+});
