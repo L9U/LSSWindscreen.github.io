@@ -1,36 +1,3 @@
-// Add this at the beginning of your script.js
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-}
-
-// Add logo click handler
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the logo element
-    const logo = document.querySelector('.logo');
-    
-    // Add click handler to logo
-    logo.addEventListener('click', function(e) {
-        e.preventDefault();
-        scrollToTop();
-    });
-    
-    // Make logo clickable with pointer cursor
-    logo.style.cursor = 'pointer';
-});
-
-// Handle page reload scroll position
-window.onbeforeunload = function() {
-    scrollToTop();
-};
-
-// Remove any stored scroll position on page load
-if (history.scrollRestoration) {
-    history.scrollRestoration = 'manual';
-}
-
 // Initialize AOS (Animate On Scroll)
 AOS.init({
     duration: 800,
@@ -113,16 +80,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update map theme
     function updateMapTheme(isDark) {
-        if (!mapIframe) return;
         let currentSrc = mapIframe.src;
         currentSrc = currentSrc.replace('&darkmode=1', '').replace('&darkmode=0', '');
         mapIframe.src = currentSrc + (isDark ? '&darkmode=1' : '&darkmode=0');
     }
     
-    // Always set dark mode as default, regardless of device or saved preference
-    document.documentElement.setAttribute('data-theme', 'dark');
-    localStorage.setItem('theme', 'dark');
-    updateMapTheme(true);
+    // Check for saved theme preference or system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateMapTheme(savedTheme === 'dark');
+    } else if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        updateMapTheme(true);
+    }
     
     themeToggle.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -476,91 +449,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Observe all sections
     sections.forEach(section => observer.observe(section));
-});
-
-// Better mobile detection
-function isMobileDevice() {
-    return (
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        navigator.msMaxTouchPoints > 0 ||
-        window.matchMedia('(max-width: 768px)').matches
-    );
-}
-
-if (isMobileDevice()) {
-    // Existing mobile optimizations...
-    
-    // Disable hover-only features
-    document.body.classList.add('touch-device');
-    
-    // Adjust scroll behavior for better performance
-    document.documentElement.style.scrollBehavior = 'auto';
-}
-
-// Enhanced touch handling for testimonials
-document.addEventListener('DOMContentLoaded', function() {
-    const testimonialTrack = document.querySelector('.testimonial-track');
-    const testimonialContainer = document.querySelector('.testimonial-container');
-    let startX = 0;
-    let currentTranslateX = 0;
-    let prevTranslateX = 0;
-    let isDragging = false;
-    let currentIndex = 0;
-    const testimonials = document.querySelectorAll('.testimonial-card');
-    const totalTestimonials = testimonials.length;
-
-    function getPositionX(event) {
-        return event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
-    }
-
-    function setSliderPosition() {
-        testimonialTrack.style.transform = `translateX(${currentTranslateX}px)`;
-    }
-
-    function animateSlide() {
-        const slideWidth = testimonialContainer.offsetWidth;
-        currentTranslateX = -currentIndex * slideWidth;
-        prevTranslateX = currentTranslateX;
-        setSliderPosition();
-    }
-
-    testimonialTrack.addEventListener('touchstart', touchStart);
-    testimonialTrack.addEventListener('touchmove', touchMove);
-    testimonialTrack.addEventListener('touchend', touchEnd);
-
-    function touchStart(event) {
-        startX = getPositionX(event);
-        isDragging = true;
-        testimonialTrack.style.transition = 'none';
-    }
-
-    function touchMove(event) {
-        if (!isDragging) return;
-        const currentX = getPositionX(event);
-        const diff = currentX - startX;
-        currentTranslateX = prevTranslateX + diff;
-        setSliderPosition();
-    }
-
-    function touchEnd() {
-        isDragging = false;
-        const slideWidth = testimonialContainer.offsetWidth;
-        const movedBy = currentTranslateX - prevTranslateX;
-
-        testimonialTrack.style.transition = 'transform 0.3s ease-out';
-
-        if (Math.abs(movedBy) > slideWidth / 4) {
-            if (movedBy > 0 && currentIndex > 0) {
-                currentIndex--;
-            } else if (movedBy < 0 && currentIndex < totalTestimonials - 1) {
-                currentIndex++;
-            }
-        }
-
-        animateSlide();
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', animateSlide);
 });
