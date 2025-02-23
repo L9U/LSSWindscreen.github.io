@@ -327,22 +327,34 @@ updateBusinessHours();
 setInterval(updateBusinessHours, 60000);
 
 // Image gallery expansion
-document.querySelectorAll('.gallery-item').forEach(item => {
+document.querySelectorAll('.gallery-item').forEach((item, index) => {
     item.addEventListener('click', () => {
-        const img = item.querySelector('img');
+        const images = Array.from(document.querySelectorAll('.gallery-item img'));
+        const currentIndex = images.findIndex(img => img.src === item.querySelector('img').src);
+        
         const overlay = document.createElement('div');
         const backdrop = document.createElement('div');
         const expandedImg = document.createElement('img');
         const closeBtn = document.createElement('button');
+        const prevBtn = document.createElement('button');
+        const nextBtn = document.createElement('button');
         
         overlay.className = 'image-overlay';
         backdrop.className = 'overlay-backdrop';
         closeBtn.className = 'overlay-close';
-        closeBtn.innerHTML = '×';
+        prevBtn.className = 'overlay-nav prev';
+        nextBtn.className = 'overlay-nav next';
         
-        expandedImg.src = img.src;
+        closeBtn.innerHTML = '×';
+        prevBtn.innerHTML = '❮';
+        nextBtn.innerHTML = '❯';
+        
+        expandedImg.src = images[currentIndex].src;
+        
         overlay.appendChild(expandedImg);
         overlay.appendChild(closeBtn);
+        overlay.appendChild(prevBtn);
+        overlay.appendChild(nextBtn);
         
         document.body.appendChild(backdrop);
         document.body.appendChild(overlay);
@@ -352,11 +364,45 @@ document.querySelectorAll('.gallery-item').forEach(item => {
             overlay.classList.add('active');
             backdrop.classList.add('active');
         });
+
+        // Navigation functions
+        function showImage(index) {
+            if (index >= 0 && index < images.length) {
+                expandedImg.src = images[index].src;
+                return index;
+            }
+            return currentIndex;
+        }
+
+        let currentImageIndex = currentIndex;
+
+        // Event listeners for navigation
+        prevBtn.addEventListener('click', () => {
+            currentImageIndex = showImage(currentImageIndex - 1);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentImageIndex = showImage(currentImageIndex + 1);
+        });
+
+        // Keyboard navigation
+        function handleKeyPress(e) {
+            if (e.key === 'ArrowLeft') {
+                currentImageIndex = showImage(currentImageIndex - 1);
+            } else if (e.key === 'ArrowRight') {
+                currentImageIndex = showImage(currentImageIndex + 1);
+            } else if (e.key === 'Escape') {
+                closeOverlay();
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyPress);
         
         // Close handlers
         const closeOverlay = () => {
             overlay.classList.remove('active');
             backdrop.classList.remove('active');
+            document.removeEventListener('keydown', handleKeyPress);
             setTimeout(() => {
                 overlay.remove();
                 backdrop.remove();
